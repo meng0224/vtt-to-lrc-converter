@@ -50,6 +50,17 @@
             background-color: #f0f8ff;
         }
         
+        .upload-section.disabled {
+            border-color: #cccccc;
+            background-color: #f5f5f5;
+            opacity: 0.7;
+        }
+        
+        .upload-section.dragover {
+            border-color: #4CAF50;
+            background-color: rgba(76, 175, 80, 0.1);
+        }
+        
         .upload-title {
             font-weight: bold;
             margin-bottom: 15px;
@@ -57,21 +68,8 @@
             font-size: 1.2rem;
         }
         
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            width: 100%;
-        }
-        
-        .file-input-wrapper input[type=file] {
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            cursor: pointer;
-            width: 100%;
-            height: 100%;
+        .file-input-container {
+            margin-bottom: 15px;
         }
         
         .file-input-label {
@@ -91,6 +89,31 @@
             background-color: #2980b9;
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .file-input-label.disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        #file-input {
+            display: none;
+        }
+        
+        .drag-drop-area {
+            margin-top: 15px;
+            padding: 20px;
+            background-color: #f0f8ff;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px dashed #3498db;
+            transition: all 0.3s;
+        }
+        
+        .drag-drop-area:hover {
+            background-color: #e6f3ff;
         }
         
         .file-list {
@@ -122,6 +145,12 @@
         .file-size {
             color: #666;
             font-size: 0.9rem;
+        }
+        
+        .file-error {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-left: 10px;
         }
         
         .convert-section {
@@ -253,9 +282,32 @@
             border: 1px solid rgba(33, 150, 243, 0.3);
         }
         
+        .status-warning {
+            background-color: rgba(255, 152, 0, 0.1);
+            color: #ef6c00;
+            border: 1px solid rgba(255, 152, 0, 0.3);
+        }
+        
+        .browser-support {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
         .icon {
             margin-right: 8px;
             vertical-align: middle;
+        }
+        
+        .file-info {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #666;
+            text-align: center;
         }
         
         @media (max-width: 600px) {
@@ -284,14 +336,25 @@
     <div class="container">
         <h1>🎵 VTT 转 LRC 转换器</h1>
         
-        <div class="upload-section">
+        <div id="browser-support" class="browser-support" style="display: none;">
+            <span class="icon">⚠️</span> 您的浏览器不支持文件上传功能，请使用现代浏览器如Chrome、Firefox或Edge。
+        </div>
+        
+        <div id="upload-section" class="upload-section">
             <div class="upload-title">📁 选择 VTT 文件</div>
-            <div class="file-input-wrapper">
+            
+            <div class="file-input-container">
                 <label for="file-input" class="file-input-label">
                     <span class="icon">📂</span> 点击选择 VTT 文件（可多选）
                 </label>
                 <input type="file" id="file-input" accept=".vtt" multiple>
             </div>
+            
+            <div class="drag-drop-area" id="drag-drop-area">
+                <span class="icon">📁</span> 或者拖放 VTT 文件到这里
+            </div>
+            
+            <div class="file-info">支持格式：.vtt，单个文件最大10MB</div>
             <div id="file-list" class="file-list">未选择文件</div>
         </div>
         
@@ -314,6 +377,15 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // 检查浏览器是否支持File API
+            if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
+                document.getElementById('browser-support').style.display = 'block';
+                document.getElementById('upload-section').classList.add('disabled');
+                document.querySelector('.file-input-label').classList.add('disabled');
+                document.getElementById('convert-button').disabled = true;
+                return;
+            }
+            
             const fileInput = document.getElementById('file-input');
             const fileList = document.getElementById('file-list');
             const convertButton = document.getElementById('convert-button');
@@ -321,16 +393,78 @@
             const resultsSection = document.getElementById('results-section');
             const resultsContainer = document.getElementById('results-container');
             const progressBar = document.getElementById('progress-bar');
+            const dragDropArea = document.getElementById('drag-drop-area');
+            const uploadSection = document.getElementById('upload-section');
             
             let selectedFiles = [];
             let convertedFiles = [];
+            const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
             
             // 文件选择事件
-            fileInput.addEventListener('change', function() {
-                selectedFiles = Array.from(fileInput.files);
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            // 拖放事件
+            dragDropArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadSection.classList.add('dragover');
+            });
+            
+            dragDropArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadSection.classList.remove('dragover');
+            });
+            
+            dragDropArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadSection.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                handleFiles(files);
+            });
+            
+            // 处理文件选择
+            function handleFileSelect(e) {
+                const files = e.target.files;
+                handleFiles(files);
+            }
+            
+            // 处理文件
+            function handleFiles(files) {
+                const filesArray = Array.from(files);
+                selectedFiles = [];
+                let hasErrors = false;
+                
+                // 验证文件
+                filesArray.forEach(file => {
+                    // 检查文件类型
+                    if (!file.name.toLowerCase().endsWith('.vtt')) {
+                        showStatus(`文件 "${file.name}" 不是有效的VTT文件`, 'error');
+                        hasErrors = true;
+                        return;
+                    }
+                    
+                    // 检查文件大小
+                    if (file.size > MAX_FILE_SIZE) {
+                        showStatus(`文件 "${file.name}" 超过10MB大小限制`, 'error');
+                        hasErrors = true;
+                        return;
+                    }
+                    
+                    selectedFiles.push(file);
+                });
+                
                 updateFileList();
                 resetConversion();
-            });
+                
+                if (hasErrors) {
+                    showStatus('部分文件不符合要求，请检查', 'warning');
+                } else if (selectedFiles.length > 0) {
+                    showStatus(`已选择 ${selectedFiles.length} 个文件`, 'info');
+                }
+            }
             
             // 更新文件列表显示
             function updateFileList() {
@@ -436,6 +570,7 @@
                         successCount++;
                     } catch (error) {
                         console.error(`处理 ${file.name} 时出错:`, error);
+                        showStatus(`处理文件 "${file.name}" 时出错: ${error.message}`, 'error');
                     }
                     
                     processedCount++;
@@ -500,7 +635,7 @@
                 let subtitleAdd = "";
                 
                 // 正则表达式匹配时间戳
-                const timeRegex = /(\d{2}):(\d{2}):(\d{2})\.(\d{3}) --> (\d{2}):(\d{2}):(\d{2})\.(\d{3})/;
+                const timeRegex = /(\d{2}):(\d{2}):(\d{2})\.(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})\.(\d{3})/;
                 
                 for (const line of lines) {
                     const trimmedLine = line.trim();
@@ -519,15 +654,16 @@
                         const startSeconds = parseInt(timeMatch[3]);
                         const startMs = parseInt(timeMatch[4]);
                         
-                        startTime = `[${startHours * 60 + startMinutes:02}:${startSeconds}.${Math.round(startMs / 10):02}]`;
-                        
+                        const startTotalMinutes = (startHours * 60 + startMinutes).toString().padStart(2, '0');
+                        const startSec = startSeconds.toString().padStart(2, '0');
+                        const startMs2 = Math.round(startMs / 10).toString().padStart(2, '0');
+                        startTime = `[${startTotalMinutes}:${startSec}.${startMs2}]`;
+
                         // 转换结束时间
-                        const endHours = parseInt(timeMatch[5]);
-                        const endMinutes = parseInt(timeMatch[6]);
-                        const endSeconds = parseInt(timeMatch[7]);
-                        const endMs = parseInt(timeMatch[8]);
-                        
-                        endTime = `[${endHours * 60 + endMinutes:02}:${endSeconds}.${Math.round(endMs / 10):02}]`;
+                        const endTotalMinutes = (endHours * 60 + endMinutes).toString().padStart(2, '0');
+                        const endSec = endSeconds.toString().padStart(2, '0');
+                        const endMs2 = Math.round(endMs / 10).toString().padStart(2, '0');
+                        endTime = `[${endTotalMinutes}:${endSec}.${endMs2}]`;
                         
                         count++;
                     }
