@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VTT 转 LRC 转换器</title>
+    <!-- 引入JSZip库用于创建ZIP文件 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -256,6 +258,46 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
         
+        .batch-download-container {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .batch-download-button {
+            padding: 12px 24px;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            flex: 1;
+        }
+        
+        .batch-download-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .batch-download-button:disabled {
+            background: linear-gradient(to right, #cccccc, #aaaaaa);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .zip-download-button {
+            background: linear-gradient(to right, #FF9800, #F57C00);
+        }
+        
+        .direct-download-button {
+            background: linear-gradient(to right, #9C27B0, #7B1FA2);
+        }
+        
         .status-message {
             text-align: center;
             margin-top: 15px;
@@ -329,6 +371,10 @@
                 margin-top: 10px;
                 width: 100%;
             }
+            
+            .batch-download-container {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -372,6 +418,14 @@
         <div id="results-section" class="results-section">
             <div class="results-title">✅ 转换结果</div>
             <div id="results-container"></div>
+            <div class="batch-download-container">
+                <button id="batch-download-zip" class="batch-download-button zip-download-button">
+                    <span class="icon">📦</span> 打包下载所有文件 (ZIP)
+                </button>
+                <button id="batch-download-direct" class="batch-download-button direct-download-button">
+                    <span class="icon">📁</span> 直接批量下载
+                </button>
+            </div>
         </div>
     </div>
 
@@ -395,6 +449,8 @@
             const progressBar = document.getElementById('progress-bar');
             const dragDropArea = document.getElementById('drag-drop-area');
             const uploadSection = document.getElementById('upload-section');
+            const batchDownloadZipButton = document.getElementById('batch-download-zip');
+            const batchDownloadDirectButton = document.getElementById('batch-download-direct');
             
             let selectedFiles = [];
             let convertedFiles = [];
@@ -423,6 +479,36 @@
                 
                 const files = e.dataTransfer.files;
                 handleFiles(files);
+            });
+            
+            // 打包下载按钮事件
+            batchDownloadZipButton.addEventListener('click', function() {
+                if (convertedFiles.length === 0) {
+                    showStatus('没有可下载的文件', 'error');
+                    return;
+                }
+                
+                // 禁用按钮防止重复点击
+                batchDownloadZipButton.disabled = true;
+                batchDownloadZipButton.textContent = '正在打包...';
+                
+                // 创建ZIP文件
+                createAndDownloadZip();
+            });
+            
+            // 直接批量下载按钮事件
+            batchDownloadDirectButton.addEventListener('click', function() {
+                if (convertedFiles.length === 0) {
+                    showStatus('没有可下载的文件', 'error');
+                    return;
+                }
+                
+                // 禁用按钮防止重复点击
+                batchDownloadDirectButton.disabled = true;
+                batchDownloadDirectButton.textContent = '正在下载...';
+                
+                // 直接批量下载所有文件
+                directBatchDownload();
             });
             
             // 处理文件选择
@@ -521,6 +607,10 @@
                 resultsSection.style.display = 'none';
                 resultsContainer.innerHTML = '';
                 convertedFiles = [];
+                batchDownloadZipButton.disabled = false;
+                batchDownloadDirectButton.disabled = false;
+                batchDownloadZipButton.innerHTML = '<span class="icon">📦</span> 打包下载所有文件 (ZIP)';
+                batchDownloadDirectButton.innerHTML = '<span class="icon">📁</span> 直接批量下载';
             }
             
             // 转换按钮点击事件
@@ -564,7 +654,8 @@
                             name: lrcFileName,
                             url: url,
                             originalName: file.name,
-                            size: blob.size
+                            size: blob.size,
+                            content: lrcContent  // 保存内容用于批量下载
                         });
                         
                         successCount++;
@@ -635,7 +726,7 @@
                 let subtitleAdd = "";
                 
                 // 正则表达式匹配时间戳
-                const timeRegex = /(\d{2}):(\d{2}):(\d{2})\.(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})\.(\d{3})/;
+                const timeRegex = /(\d{2}):(\d{2}):(\d{2})\.(\d{3}) --> (\d{2}):(\d{2}):(\d{2})\.(\d{3})/;
                 
                 for (const line of lines) {
                     const trimmedLine = line.trim();
@@ -644,7 +735,7 @@
                     const timeMatch = trimmedLine.match(timeRegex);
                     if (timeMatch) {
                         if (count !== 1) {
-                            lrcLines.push(`${startTime}${subtitleAdd}\n${endTime}\n`);
+                            lrcLines.push(startTime + subtitleAdd + "\n" + endTime + "\n");
                             subtitleAdd = "";
                         }
                         
@@ -654,16 +745,25 @@
                         const startSeconds = parseInt(timeMatch[3]);
                         const startMs = parseInt(timeMatch[4]);
                         
-                        const startTotalMinutes = (startHours * 60 + startMinutes).toString().padStart(2, '0');
-                        const startSec = startSeconds.toString().padStart(2, '0');
-                        const startMs2 = Math.round(startMs / 10).toString().padStart(2, '0');
-                        startTime = `[${startTotalMinutes}:${startSec}.${startMs2}]`;
-
+                        const totalStartMinutes = startHours * 60 + startMinutes;
+                        const formattedStartMinutes = totalStartMinutes.toString().padStart(2, '0');
+                        const formattedStartSeconds = startSeconds.toString().padStart(2, '0');
+                        const formattedStartMs = Math.round(startMs / 10).toString().padStart(2, '0');
+                        
+                        startTime = "[" + formattedStartMinutes + ":" + formattedStartSeconds + "." + formattedStartMs + "]";
+                        
                         // 转换结束时间
-                        const endTotalMinutes = (endHours * 60 + endMinutes).toString().padStart(2, '0');
-                        const endSec = endSeconds.toString().padStart(2, '0');
-                        const endMs2 = Math.round(endMs / 10).toString().padStart(2, '0');
-                        endTime = `[${endTotalMinutes}:${endSec}.${endMs2}]`;
+                        const endHours = parseInt(timeMatch[5]);
+                        const endMinutes = parseInt(timeMatch[6]);
+                        const endSeconds = parseInt(timeMatch[7]);
+                        const endMs = parseInt(timeMatch[8]);
+                        
+                        const totalEndMinutes = endHours * 60 + endMinutes;
+                        const formattedEndMinutes = totalEndMinutes.toString().padStart(2, '0');
+                        const formattedEndSeconds = endSeconds.toString().padStart(2, '0');
+                        const formattedEndMs = Math.round(endMs / 10).toString().padStart(2, '0');
+                        
+                        endTime = "[" + formattedEndMinutes + ":" + formattedEndSeconds + "." + formattedEndMs + "]";
                         
                         count++;
                     }
@@ -691,11 +791,11 @@
                 }
                 
                 // 添加最后一行字幕
-                lrcLines.push(`${startTime}${subtitleAdd}\n${endTime}\n`);
+                lrcLines.push(startTime + subtitleAdd + "\n" + endTime + "\n");
                 
                 // 生成LRC文件内容
                 const lrcFileName = getFileNameWithoutExtension(fileName) + '.lrc';
-                let lrcContent = `[ti:${lrcFileName}]\n`;
+                let lrcContent = "[ti:" + lrcFileName + "]\n";
                 lrcContent += "[by: 网页版转换器]\n";
                 
                 for (const line of lrcLines) {
@@ -724,7 +824,7 @@
                     
                     const resultStatus = document.createElement('div');
                     resultStatus.className = 'result-status';
-                    resultStatus.textContent = `转换成功 (${formatFileSize(file.size)})`;
+                    resultStatus.textContent = "转换成功 (" + formatFileSize(file.size) + ")";
                     
                     resultInfo.appendChild(resultName);
                     resultInfo.appendChild(resultStatus);
@@ -746,7 +846,103 @@
                     resultsContainer.appendChild(resultItem);
                 });
                 
+                // 如果有多个文件，显示批量下载按钮
+                if (convertedFiles.length > 1) {
+                    batchDownloadZipButton.style.display = 'inline-block';
+                    batchDownloadDirectButton.style.display = 'inline-block';
+                } else {
+                    batchDownloadZipButton.style.display = 'none';
+                    batchDownloadDirectButton.style.display = 'none';
+                }
+                
                 resultsSection.style.display = 'block';
+            }
+            
+            // 创建并下载ZIP文件
+            async function createAndDownloadZip() {
+                try {
+                    // 创建一个新的JSZip实例
+                    const zip = new JSZip();
+                    
+                    // 添加所有转换后的文件到ZIP中
+                    convertedFiles.forEach(file => {
+                        zip.file(file.name, file.content);
+                    });
+                    
+                    // 生成ZIP文件
+                    const content = await zip.generateAsync({type: 'blob'});
+                    
+                    // 创建下载链接
+                    const url = URL.createObjectURL(content);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    
+                    // 生成ZIP文件名（使用当前日期时间）
+                    const now = new Date();
+                    const dateStr = now.getFullYear() + 
+                                  (now.getMonth() + 1).toString().padStart(2, '0') + 
+                                  now.getDate().toString().padStart(2, '0') + '_' +
+                                  now.getHours().toString().padStart(2, '0') + 
+                                  now.getMinutes().toString().padStart(2, '0') + 
+                                  now.getSeconds().toString().padStart(2, '0');
+                    
+                    a.download = 'VTT转LRC文件_' + dateStr + '.zip';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    // 重新启用按钮
+                    batchDownloadZipButton.disabled = false;
+                    batchDownloadZipButton.innerHTML = '<span class="icon">📦</span> 打包下载所有文件 (ZIP)';
+                    
+                    showStatus('ZIP文件已生成并开始下载', 'success');
+                } catch (error) {
+                    console.error('创建ZIP文件时出错:', error);
+                    showStatus('创建ZIP文件时出错: ' + error.message, 'error');
+                    
+                    // 重新启用按钮
+                    batchDownloadZipButton.disabled = false;
+                    batchDownloadZipButton.innerHTML = '<span class="icon">📦</span> 打包下载所有文件 (ZIP)';
+                }
+            }
+            
+            // 直接批量下载所有文件
+            async function directBatchDownload() {
+                try {
+                    let downloadCount = 0;
+                    
+                    // 依次下载每个文件
+                    for (const file of convertedFiles) {
+                        // 创建下载链接
+                        const a = document.createElement('a');
+                        a.href = file.url;
+                        a.download = file.name;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        
+                        downloadCount++;
+                        
+                        // 更新按钮文本显示进度
+                        batchDownloadDirectButton.textContent = `正在下载 (${downloadCount}/${convertedFiles.length})...`;
+                        
+                        // 添加短暂延迟，避免浏览器阻止多个同时下载
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                    }
+                    
+                    // 重新启用按钮
+                    batchDownloadDirectButton.disabled = false;
+                    batchDownloadDirectButton.innerHTML = '<span class="icon">📁</span> 直接批量下载';
+                    
+                    showStatus(`已开始下载 ${downloadCount} 个文件`, 'success');
+                } catch (error) {
+                    console.error('批量下载时出错:', error);
+                    showStatus('批量下载时出错: ' + error.message, 'error');
+                    
+                    // 重新启用按钮
+                    batchDownloadDirectButton.disabled = false;
+                    batchDownloadDirectButton.innerHTML = '<span class="icon">📁</span> 直接批量下载';
+                }
             }
         });
     </script>
