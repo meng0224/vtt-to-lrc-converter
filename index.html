@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VTT 转 LRC 转换器</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.2rem;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .upload-section {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 2px dashed #3498db;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-section:hover {
+            border-color: #2980b9;
+            background-color: #f0f8ff;
+        }
+        
+        .upload-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #3498db;
+            font-size: 1.2rem;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .file-input-label {
+            display: block;
+            padding: 15px 20px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+        
+        .file-input-label:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .file-list {
+            margin-top: 15px;
+            padding: 12px;
+            background-color: #fff;
+            border-radius: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .file-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        
+        .file-name {
+            font-weight: 500;
+        }
+        
+        .file-size {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .convert-section {
+            margin-bottom: 25px;
+        }
+        
+        .convert-button {
+            padding: 15px 20px;
+            background: linear-gradient(to right, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 500;
+            width: 100%;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .convert-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .convert-button:disabled {
+            background: linear-gradient(to right, #cccccc, #aaaaaa);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .progress-container {
+            margin-top: 15px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 10px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(to right, #4CAF50, #8BC34A);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+        
+        .results-section {
+            margin-top: 25px;
+            display: none;
+        }
+        
+        .results-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 1.2rem;
+        }
+        
+        .result-item {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #4CAF50;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .result-info {
+            flex-grow: 1;
+        }
+        
+        .result-name {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        
+        .result-status {
+            color: #4CAF50;
+            font-size: 0.9rem;
+        }
+        
+        .download-button {
+            padding: 8px 16px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .download-button:hover {
+            background-color: #0b7dda;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .status-message {
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        
+        .status-success {
+            background-color: rgba(76, 175, 80, 0.1);
+            color: #2e7d32;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+        
+        .status-error {
+            background-color: rgba(244, 67, 54, 0.1);
+            color: #c62828;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+        
+        .status-info {
+            background-color: rgba(33, 150, 243, 0.1);
+            color: #1565c0;
+            border: 1px solid rgba(33, 150, 243, 0.3);
+        }
+        
+        .icon {
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                margin: 20px auto;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .result-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .download-button {
+                margin-top: 10px;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 VTT 转 LRC 转换器</h1>
+        
+        <div class="upload-section">
+            <div class="upload-title">📁 选择 VTT 文件</div>
+            <div class="file-input-wrapper">
+                <label for="file-input" class="file-input-label">
+                    <span class="icon">📂</span> 点击选择 VTT 文件（可多选）
+                </label>
+                <input type="file" id="file-input" accept=".vtt" multiple>
+            </div>
+            <div id="file-list" class="file-list">未选择文件</div>
+        </div>
+        
+        <div class="convert-section">
+            <button id="convert-button" class="convert-button">
+                <span class="icon">🔄</span> 开始转换
+            </button>
+            <div class="progress-container">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+        </div>
+        
+        <div id="status-message" class="status-message" style="display: none;"></div>
+        
+        <div id="results-section" class="results-section">
+            <div class="results-title">✅ 转换结果</div>
+            <div id="results-container"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('file-input');
+            const fileList = document.getElementById('file-list');
+            const convertButton = document.getElementById('convert-button');
+            const statusMessage = document.getElementById('status-message');
+            const resultsSection = document.getElementById('results-section');
+            const resultsContainer = document.getElementById('results-container');
+            const progressBar = document.getElementById('progress-bar');
+            
+            let selectedFiles = [];
+            let convertedFiles = [];
+            
+            // 文件选择事件
+            fileInput.addEventListener('change', function() {
+                selectedFiles = Array.from(fileInput.files);
+                updateFileList();
+                resetConversion();
+            });
+            
+            // 更新文件列表显示
+            function updateFileList() {
+                if (selectedFiles.length === 0) {
+                    fileList.innerHTML = '<div style="text-align: center; color: #666;">未选择文件</div>';
+                    return;
+                }
+                
+                fileList.innerHTML = '';
+                selectedFiles.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    
+                    const fileName = document.createElement('div');
+                    fileName.className = 'file-name';
+                    fileName.textContent = file.name;
+                    
+                    const fileSize = document.createElement('div');
+                    fileSize.className = 'file-size';
+                    fileSize.textContent = formatFileSize(file.size);
+                    
+                    fileItem.appendChild(fileName);
+                    fileItem.appendChild(fileSize);
+                    fileList.appendChild(fileItem);
+                });
+            }
+            
+            // 格式化文件大小
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            // 显示状态消息
+            function showStatus(message, type) {
+                statusMessage.textContent = message;
+                statusMessage.className = 'status-message status-' + type;
+                statusMessage.style.display = 'block';
+                
+                if (type === 'success' || type === 'info') {
+                    setTimeout(() => {
+                        statusMessage.style.display = 'none';
+                    }, 5000);
+                }
+            }
+            
+            // 重置转换状态
+            function resetConversion() {
+                convertButton.disabled = false;
+                progressBar.style.width = '0%';
+                resultsSection.style.display = 'none';
+                resultsContainer.innerHTML = '';
+                convertedFiles = [];
+            }
+            
+            // 转换按钮点击事件
+            convertButton.addEventListener('click', function() {
+                if (selectedFiles.length === 0) {
+                    showStatus('请先选择VTT文件', 'error');
+                    return;
+                }
+                
+                // 禁用按钮
+                convertButton.disabled = true;
+                
+                // 重置状态
+                resetConversion();
+                showStatus('正在转换文件...', 'info');
+                
+                // 处理文件转换
+                processFiles();
+            });
+            
+            // 处理文件转换
+            async function processFiles() {
+                const totalFiles = selectedFiles.length;
+                let processedCount = 0;
+                let successCount = 0;
+                
+                for (const file of selectedFiles) {
+                    try {
+                        // 读取文件内容
+                        const content = await readFileContent(file);
+                        
+                        // 转换VTT到LRC
+                        const lrcContent = convertVttToLrc(content, file.name);
+                        
+                        // 创建下载链接
+                        const lrcFileName = getFileNameWithoutExtension(file.name) + '.lrc';
+                        const blob = new Blob([lrcContent], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        
+                        convertedFiles.push({
+                            name: lrcFileName,
+                            url: url,
+                            originalName: file.name,
+                            size: blob.size
+                        });
+                        
+                        successCount++;
+                    } catch (error) {
+                        console.error(`处理 ${file.name} 时出错:`, error);
+                    }
+                    
+                    processedCount++;
+                    updateProgress((processedCount / totalFiles) * 100);
+                }
+                
+                // 转换完成
+                if (successCount === totalFiles) {
+                    showStatus(`成功转换了 ${successCount} 个文件！`, 'success');
+                } else {
+                    showStatus(`转换完成！成功: ${successCount} 个，失败: ${totalFiles - successCount} 个`, 'info');
+                }
+                
+                // 显示结果
+                showResults();
+                
+                // 重新启用按钮
+                convertButton.disabled = false;
+            }
+            
+            // 更新进度条
+            function updateProgress(percent) {
+                progressBar.style.width = `${percent}%`;
+            }
+            
+            // 读取文件内容
+            function readFileContent(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = event => resolve(event.target.result);
+                    reader.onerror = error => reject(error);
+                    reader.readAsText(file, 'UTF-8');
+                });
+            }
+            
+            // 获取不带扩展名的文件名
+            function getFileNameWithoutExtension(filename) {
+                const knownExtensions = [
+                    'mp3', 'wav', 'acc', 'flac', 
+                    'vtt', 'srt', 'lrc'
+                ];
+                
+                const parts = filename.split('.');
+                if (parts.length === 1) return filename;
+                
+                const extension = parts[parts.length - 1].toLowerCase();
+                if (knownExtensions.includes(extension)) {
+                    return parts.slice(0, -1).join('.');
+                }
+                
+                return filename;
+            }
+            
+            // 转换VTT到LRC
+            function convertVttToLrc(vttContent, fileName) {
+                const lines = vttContent.split('\n');
+                const lrcLines = [];
+                let startTime = "";
+                let endTime = "";
+                let count = 1;
+                let subtitleMarkerExists = false;
+                let subtitleAdd = "";
+                
+                // 正则表达式匹配时间戳
+                const timeRegex = /(\d{2}):(\d{2}):(\d{2})\.(\d{3}) --> (\d{2}):(\d{2}):(\d{2})\.(\d{3})/;
+                
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    
+                    // 匹配时间戳行
+                    const timeMatch = trimmedLine.match(timeRegex);
+                    if (timeMatch) {
+                        if (count !== 1) {
+                            lrcLines.push(`${startTime}${subtitleAdd}\n${endTime}\n`);
+                            subtitleAdd = "";
+                        }
+                        
+                        // 转换开始时间
+                        const startHours = parseInt(timeMatch[1]);
+                        const startMinutes = parseInt(timeMatch[2]);
+                        const startSeconds = parseInt(timeMatch[3]);
+                        const startMs = parseInt(timeMatch[4]);
+                        
+                        startTime = `[${startHours * 60 + startMinutes:02}:${startSeconds}.${Math.round(startMs / 10):02}]`;
+                        
+                        // 转换结束时间
+                        const endHours = parseInt(timeMatch[5]);
+                        const endMinutes = parseInt(timeMatch[6]);
+                        const endSeconds = parseInt(timeMatch[7]);
+                        const endMs = parseInt(timeMatch[8]);
+                        
+                        endTime = `[${endHours * 60 + endMinutes:02}:${endSeconds}.${Math.round(endMs / 10):02}]`;
+                        
+                        count++;
+                    }
+                    // 检查是否为纯阿拉伯数字
+                    else if (/^\d+$/.test(trimmedLine)) {
+                        if (count === parseInt(trimmedLine) && !subtitleMarkerExists) {
+                            subtitleMarkerExists = true;
+                            continue;
+                        } else {
+                            subtitleAdd += trimmedLine + " ";
+                            subtitleMarkerExists = false;
+                        }
+                    }
+                    // 跳过空行
+                    else if (!trimmedLine) {
+                        continue;
+                    }
+                    // 处理字幕文本
+                    else {
+                        if (startTime && endTime) {
+                            subtitleAdd += trimmedLine + " ";
+                            subtitleMarkerExists = false;
+                        }
+                    }
+                }
+                
+                // 添加最后一行字幕
+                lrcLines.push(`${startTime}${subtitleAdd}\n${endTime}\n`);
+                
+                // 生成LRC文件内容
+                const lrcFileName = getFileNameWithoutExtension(fileName) + '.lrc';
+                let lrcContent = `[ti:${lrcFileName}]\n`;
+                lrcContent += "[by: 网页版转换器]\n";
+                
+                for (const line of lrcLines) {
+                    lrcContent += line;
+                }
+                
+                return lrcContent;
+            }
+            
+            // 显示转换结果
+            function showResults() {
+                if (convertedFiles.length === 0) return;
+                
+                resultsContainer.innerHTML = '';
+                
+                convertedFiles.forEach(file => {
+                    const resultItem = document.createElement('div');
+                    resultItem.className = 'result-item';
+                    
+                    const resultInfo = document.createElement('div');
+                    resultInfo.className = 'result-info';
+                    
+                    const resultName = document.createElement('div');
+                    resultName.className = 'result-name';
+                    resultName.textContent = file.name;
+                    
+                    const resultStatus = document.createElement('div');
+                    resultStatus.className = 'result-status';
+                    resultStatus.textContent = `转换成功 (${formatFileSize(file.size)})`;
+                    
+                    resultInfo.appendChild(resultName);
+                    resultInfo.appendChild(resultStatus);
+                    
+                    const downloadButton = document.createElement('button');
+                    downloadButton.className = 'download-button';
+                    downloadButton.textContent = '下载 LRC 文件';
+                    downloadButton.addEventListener('click', () => {
+                        const a = document.createElement('a');
+                        a.href = file.url;
+                        a.download = file.name;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    });
+                    
+                    resultItem.appendChild(resultInfo);
+                    resultItem.appendChild(downloadButton);
+                    resultsContainer.appendChild(resultItem);
+                });
+                
+                resultsSection.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
