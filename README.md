@@ -25,9 +25,8 @@
 ---
 
 ## 線上示範 / Demo
-TODO: 若已有 GitHub Pages 或 Vercel 部署，填入網址  
-範例：  
-https://使用你的部署域名
+  
+https://meng0224.github.io/vtt-to-lrc-converter/
 
 ---
 
