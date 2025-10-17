@@ -155,6 +155,56 @@
             margin-left: 10px;
         }
         
+        .options-section {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .options-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #3498db;
+            font-size: 1.1rem;
+        }
+        
+        .option-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            padding: 12px;
+            background-color: #fff;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        
+        .option-item:hover {
+            background-color: #f0f8ff;
+        }
+        
+        .option-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .option-checkbox {
+            margin-right: 12px;
+            margin-top: 3px;
+            transform: scale(1.2);
+        }
+        
+        .option-label {
+            flex-grow: 1;
+            cursor: pointer;
+        }
+        
+        .option-description {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 4px;
+        }
+        
         .convert-section {
             margin-bottom: 25px;
         }
@@ -352,6 +402,30 @@
             text-align: center;
         }
         
+        .example-box {
+            background-color: #e8f4fd;
+            border-left: 4px solid #2196F3;
+            padding: 12px;
+            margin-top: 15px;
+            border-radius: 0 4px 4px 0;
+            font-size: 0.9rem;
+            color: #0d47a1;
+        }
+        
+        .example-item {
+            margin-bottom: 6px;
+            padding: 4px 0;
+        }
+        
+        .example-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .example-arrow {
+            margin: 0 8px;
+            color: #555;
+        }
+        
         @media (max-width: 600px) {
             .container {
                 padding: 20px;
@@ -404,6 +478,35 @@
             <div id="file-list" class="file-list">未选择文件</div>
         </div>
         
+        <div class="options-section">
+            <div class="options-title">⚙️ 转换选项</div>
+            
+            <div class="option-item">
+                <input type="checkbox" id="remove-nested-ext" class="option-checkbox" checked>
+                <label for="remove-nested-ext" class="option-label">
+                    <div>去除嵌套扩展名</div>
+                    <div class="option-description">
+                        移除文件名中的所有音频/视频扩展名，只保留基本文件名
+                    </div>
+                </label>
+            </div>
+            
+            <div class="example-box">
+                <div class="example-item">
+                    <strong>启用此选项：</strong><br>
+                    <span>song.mp3.vtt</span> <span class="example-arrow">→</span> <span>song.lrc</span><br>
+                    <span>video.wav.vtt</span> <span class="example-arrow">→</span> <span>video.lrc</span><br>
+                    <span>audio.flac.vtt</span> <span class="example-arrow">→</span> <span>audio.lrc</span>
+                </div>
+                <div class="example-item">
+                    <strong>禁用此选项：</strong><br>
+                    <span>song.mp3.vtt</span> <span class="example-arrow">→</span> <span>song.mp3.lrc</span><br>
+                    <span>video.wav.vtt</span> <span class="example-arrow">→</span> <span>video.wav.lrc</span><br>
+                    <span>audio.flac.vtt</span> <span class="example-arrow">→</span> <span>audio.flac.lrc</span>
+                </div>
+            </div>
+        </div>
+        
         <div class="convert-section">
             <button id="convert-button" class="convert-button">
                 <span class="icon">🔄</span> 开始转换
@@ -451,6 +554,7 @@
             const uploadSection = document.getElementById('upload-section');
             const batchDownloadZipButton = document.getElementById('batch-download-zip');
             const batchDownloadDirectButton = document.getElementById('batch-download-direct');
+            const removeNestedExtCheckbox = document.getElementById('remove-nested-ext');
             
             let selectedFiles = [];
             let convertedFiles = [];
@@ -637,16 +741,22 @@
                 let processedCount = 0;
                 let successCount = 0;
                 
+                // 获取用户选择的选项
+                const removeNestedExt = removeNestedExtCheckbox.checked;
+                
                 for (const file of selectedFiles) {
                     try {
                         // 读取文件内容
                         const content = await readFileContent(file);
                         
                         // 转换VTT到LRC
-                        const lrcContent = convertVttToLrc(content, file.name);
+                        const lrcContent = convertVttToLrc(content, file.name, removeNestedExt);
+                        
+                        // 获取正确的文件名（根据用户选择）
+                        const baseName = getFileNameWithoutExtension(file.name, removeNestedExt);
+                        const lrcFileName = baseName + '.lrc';
                         
                         // 创建下载链接
-                        const lrcFileName = getFileNameWithoutExtension(file.name) + '.lrc';
                         const blob = new Blob([lrcContent], { type: 'text/plain' });
                         const url = URL.createObjectURL(blob);
                         
@@ -697,26 +807,74 @@
                 });
             }
             
-            // 获取不带扩展名的文件名
-            function getFileNameWithoutExtension(filename) {
-                const knownExtensions = [
-                    'mp3', 'wav', 'acc', 'flac', 
-                    'vtt', 'srt', 'lrc'
+            // 获取不带扩展名的文件名（修复版本）
+            function getFileNameWithoutExtension(filename, removeNested = false) {
+                // 转换为小写以进行不区分大小写的比较
+                const lowerFilename = filename.toLowerCase();
+                
+                // 已知的音频文件扩展名（优先检查，因为它们通常在嵌套文件名的前面）
+                const audioExtensions = [
+                    '.mp3', '.wav', '.aac', '.flac', '.ogg', '.wma', '.m4a', '.opus',
+                    '.aiff', '.au', '.ra', '.ac3', '.dts', '.amr', '.awb'
                 ];
                 
-                const parts = filename.split('.');
-                if (parts.length === 1) return filename;
+                // 已知的视频文件扩展名
+                const videoExtensions = [
+                    '.mp4', '.avi', '.mkv', '.flv', '.mov', '.wmv', '.webm', '.m4v',
+                    '.3gp', '.asf', '.rm', '.rmvb', '.vob', '.ogv', '.dv', 'ts'
+                ];
                 
-                const extension = parts[parts.length - 1].toLowerCase();
-                if (knownExtensions.includes(extension)) {
-                    return parts.slice(0, -1).join('.');
+                // 已知的字幕文件扩展名
+                const subtitleExtensions = [
+                    '.vtt', '.srt', '.sub', '.sbv', '.ass', '.ssa', 
+                    '.webvtt', '.ttml', '.dfxp', '.smi', '.sami'
+                ];
+                
+                // 合并所有已知扩展名，按长度从长到短排序
+                const allExtensions = [...audioExtensions, ...videoExtensions, ...subtitleExtensions]
+                    .sort((a, b) => b.length - a.length);
+                
+                // 如果用户选择去除嵌套扩展名
+                if (removeNested) {
+                    let result = filename;
+                    let lowerResult = lowerFilename;
+                    
+                    // 循环移除所有已知的扩展名
+                    let foundExtension = true;
+                    while (foundExtension) {
+                        foundExtension = false;
+                        
+                        // 检查是否有匹配的扩展名
+                        for (const ext of allExtensions) {
+                            if (lowerResult.endsWith(ext)) {
+                                // 移除扩展名
+                                result = result.substring(0, result.length - ext.length);
+                                lowerResult = lowerResult.substring(0, lowerResult.length - ext.length);
+                                foundExtension = true;
+                                break;
+                            }
+                        }
+                        
+                        // 如果没有找到扩展名或者文件名中不再有点，则停止循环
+                        if (!foundExtension || !lowerResult.includes('.')) {
+                            break;
+                        }
+                    }
+                    
+                    return result;
+                } else {
+                    // 如果用户不选择去除嵌套扩展名，只移除最后一个扩展名（.vtt）
+                    if (lowerFilename.endsWith('.vtt')) {
+                        return filename.substring(0, filename.length - 4);
+                    }
+                    
+                    // 如果不是.vtt文件，返回原始文件名
+                    return filename;
                 }
-                
-                return filename;
             }
             
             // 转换VTT到LRC
-            function convertVttToLrc(vttContent, fileName) {
+            function convertVttToLrc(vttContent, fileName, removeNested) {
                 const lines = vttContent.split('\n');
                 const lrcLines = [];
                 let startTime = "";
@@ -793,9 +951,11 @@
                 // 添加最后一行字幕
                 lrcLines.push(startTime + subtitleAdd + "\n" + endTime + "\n");
                 
+                // 获取正确的文件名（根据用户选择）
+                const baseName = getFileNameWithoutExtension(fileName, removeNested);
+                
                 // 生成LRC文件内容
-                const lrcFileName = getFileNameWithoutExtension(fileName) + '.lrc';
-                let lrcContent = "[ti:" + lrcFileName + "]\n";
+                let lrcContent = "[ti:" + baseName + ".lrc" + "]\n";
                 lrcContent += "[by: 网页版转换器]\n";
                 
                 for (const line of lrcLines) {
