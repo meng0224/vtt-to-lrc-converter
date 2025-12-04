@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VTT 转 LRC 转换器</title>
-    <!-- 引入JSZip库用于创建ZIP文件 -->
+    <title>VTT 转 LRC 转换器 (修正版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * {
@@ -749,7 +748,7 @@
                         // 读取文件内容
                         const content = await readFileContent(file);
                         
-                        // 转换VTT到LRC
+                        // 转换VTT到LRC (使用修正后的函数)
                         const lrcContent = convertVttToLrc(content, file.name, removeNestedExt);
                         
                         // 获取正确的文件名（根据用户选择）
@@ -807,12 +806,11 @@
                 });
             }
             
-            // 获取不带扩展名的文件名（修复版本）
+            // 获取不带扩展名的文件名
             function getFileNameWithoutExtension(filename, removeNested = false) {
-                // 转换为小写以进行不区分大小写的比较
                 const lowerFilename = filename.toLowerCase();
                 
-                // 已知的音频文件扩展名（优先检查，因为它们通常在嵌套文件名的前面）
+                // 已知的音频文件扩展名
                 const audioExtensions = [
                     '.mp3', '.wav', '.aac', '.flac', '.ogg', '.wma', '.m4a', '.opus',
                     '.aiff', '.au', '.ra', '.ac3', '.dts', '.amr', '.awb'
@@ -830,137 +828,89 @@
                     '.webvtt', '.ttml', '.dfxp', '.smi', '.sami'
                 ];
                 
-                // 合并所有已知扩展名，按长度从长到短排序
                 const allExtensions = [...audioExtensions, ...videoExtensions, ...subtitleExtensions]
                     .sort((a, b) => b.length - a.length);
                 
-                // 如果用户选择去除嵌套扩展名
                 if (removeNested) {
                     let result = filename;
                     let lowerResult = lowerFilename;
-                    
-                    // 循环移除所有已知的扩展名
                     let foundExtension = true;
                     while (foundExtension) {
                         foundExtension = false;
-                        
-                        // 检查是否有匹配的扩展名
                         for (const ext of allExtensions) {
                             if (lowerResult.endsWith(ext)) {
-                                // 移除扩展名
                                 result = result.substring(0, result.length - ext.length);
                                 lowerResult = lowerResult.substring(0, lowerResult.length - ext.length);
                                 foundExtension = true;
                                 break;
                             }
                         }
-                        
-                        // 如果没有找到扩展名或者文件名中不再有点，则停止循环
                         if (!foundExtension || !lowerResult.includes('.')) {
                             break;
                         }
                     }
-                    
                     return result;
                 } else {
-                    // 如果用户不选择去除嵌套扩展名，只移除最后一个扩展名（.vtt）
                     if (lowerFilename.endsWith('.vtt')) {
                         return filename.substring(0, filename.length - 4);
                     }
-                    
-                    // 如果不是.vtt文件，返回原始文件名
                     return filename;
                 }
             }
             
-            // 转换VTT到LRC
+            // 修正後的核心轉換函數
             function convertVttToLrc(vttContent, fileName, removeNested) {
                 const lines = vttContent.split('\n');
                 const lrcLines = [];
-                let startTime = "";
-                let endTime = "";
-                let count = 1;
-                let subtitleMarkerExists = false;
-                let subtitleAdd = "";
                 
-                // 正则表达式匹配时间戳
-                const timeRegex = /(\d{2}):(\d{2}):(\d{2})\.(\d{3}) --> (\d{2}):(\d{2}):(\d{2})\.(\d{3})/;
+                let currentStartTime = "";
+                let currentSubtitle = []; 
                 
-                for (const line of lines) {
-                    const trimmedLine = line.trim();
+                // 支持 HH:MM:SS.mmm 和 MM:SS.mmm 兩種格式
+                const timeRegex = /(?:(\d{1,2}):)?(\d{2}):(\d{2})\.(\d{3})\s+-->\s+(?:(\d{1,2}):)?(\d{2}):(\d{2})\.(\d{3})/;
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
                     
-                    // 匹配时间戳行
-                    const timeMatch = trimmedLine.match(timeRegex);
+                    if (!line || line === "WEBVTT" || line.startsWith("NOTE")) continue;
+                    
+                    const timeMatch = line.match(timeRegex);
+                    
                     if (timeMatch) {
-                        if (count !== 1) {
-                            lrcLines.push(startTime + subtitleAdd + "\n" + endTime + "\n");
-                            subtitleAdd = "";
+                        if (currentStartTime && currentSubtitle.length > 0) {
+                            lrcLines.push(currentStartTime + currentSubtitle.join(" ") + "\n");
                         }
+                        currentSubtitle = [];
                         
-                        // 转换开始时间
-                        const startHours = parseInt(timeMatch[1]);
+                        const startHours = timeMatch[1] ? parseInt(timeMatch[1]) : 0;
                         const startMinutes = parseInt(timeMatch[2]);
                         const startSeconds = parseInt(timeMatch[3]);
                         const startMs = parseInt(timeMatch[4]);
                         
                         const totalStartMinutes = startHours * 60 + startMinutes;
-                        const formattedStartMinutes = totalStartMinutes.toString().padStart(2, '0');
-                        const formattedStartSeconds = startSeconds.toString().padStart(2, '0');
-                        const formattedStartMs = Math.round(startMs / 10).toString().padStart(2, '0');
+                        const fmtMin = totalStartMinutes.toString().padStart(2, '0');
+                        const fmtSec = startSeconds.toString().padStart(2, '0');
+                        const fmtMs = Math.round(startMs / 10).toString().padStart(2, '0');
                         
-                        startTime = "[" + formattedStartMinutes + ":" + formattedStartSeconds + "." + formattedStartMs + "]";
+                        currentStartTime = `[${fmtMin}:${fmtSec}.${fmtMs}]`;
                         
-                        // 转换结束时间
-                        const endHours = parseInt(timeMatch[5]);
-                        const endMinutes = parseInt(timeMatch[6]);
-                        const endSeconds = parseInt(timeMatch[7]);
-                        const endMs = parseInt(timeMatch[8]);
-                        
-                        const totalEndMinutes = endHours * 60 + endMinutes;
-                        const formattedEndMinutes = totalEndMinutes.toString().padStart(2, '0');
-                        const formattedEndSeconds = endSeconds.toString().padStart(2, '0');
-                        const formattedEndMs = Math.round(endMs / 10).toString().padStart(2, '0');
-                        
-                        endTime = "[" + formattedEndMinutes + ":" + formattedEndSeconds + "." + formattedEndMs + "]";
-                        
-                        count++;
-                    }
-                    // 检查是否为纯阿拉伯数字
-                    else if (/^\d+$/.test(trimmedLine)) {
-                        if (count === parseInt(trimmedLine) && !subtitleMarkerExists) {
-                            subtitleMarkerExists = true;
-                            continue;
-                        } else {
-                            subtitleAdd += trimmedLine + " ";
-                            subtitleMarkerExists = false;
-                        }
-                    }
-                    // 跳过空行
-                    else if (!trimmedLine) {
-                        continue;
-                    }
-                    // 处理字幕文本
-                    else {
-                        if (startTime && endTime) {
-                            subtitleAdd += trimmedLine + " ";
-                            subtitleMarkerExists = false;
+                    } else if (currentStartTime) {
+                        if (!/^\d+$/.test(line)) {
+                            // 移除 HTML 標籤
+                            const cleanLine = line.replace(/<[^>]+>/g, '');
+                            currentSubtitle.push(cleanLine);
                         }
                     }
                 }
                 
-                // 添加最后一行字幕
-                lrcLines.push(startTime + subtitleAdd + "\n" + endTime + "\n");
+                if (currentStartTime && currentSubtitle.length > 0) {
+                    lrcLines.push(currentStartTime + currentSubtitle.join(" ") + "\n");
+                }
                 
-                // 获取正确的文件名（根据用户选择）
                 const baseName = getFileNameWithoutExtension(fileName, removeNested);
-                
-                // 生成LRC文件内容
-                let lrcContent = "[ti:" + baseName + ".lrc" + "]\n";
-                lrcContent += "[by: 网页版转换器]\n";
-                
-                for (const line of lrcLines) {
-                    lrcContent += line;
-                }
+                // 修正 Ti 標籤
+                let lrcContent = `[ti:${baseName}]\n[by: 网页版转换器]\n`;
+                lrcContent += lrcLines.join("");
                 
                 return lrcContent;
             }
@@ -1021,23 +971,16 @@
             // 创建并下载ZIP文件
             async function createAndDownloadZip() {
                 try {
-                    // 创建一个新的JSZip实例
                     const zip = new JSZip();
-                    
-                    // 添加所有转换后的文件到ZIP中
                     convertedFiles.forEach(file => {
                         zip.file(file.name, file.content);
                     });
                     
-                    // 生成ZIP文件
                     const content = await zip.generateAsync({type: 'blob'});
-                    
-                    // 创建下载链接
                     const url = URL.createObjectURL(content);
                     const a = document.createElement('a');
                     a.href = url;
                     
-                    // 生成ZIP文件名（使用当前日期时间）
                     const now = new Date();
                     const dateStr = now.getFullYear() + 
                                   (now.getMonth() + 1).toString().padStart(2, '0') + 
@@ -1051,7 +994,6 @@
                     a.click();
                     document.body.removeChild(a);
                     
-                    // 重新启用按钮
                     batchDownloadZipButton.disabled = false;
                     batchDownloadZipButton.innerHTML = '<span class="icon">📦</span> 打包下载所有文件 (ZIP)';
                     
@@ -1060,7 +1002,6 @@
                     console.error('创建ZIP文件时出错:', error);
                     showStatus('创建ZIP文件时出错: ' + error.message, 'error');
                     
-                    // 重新启用按钮
                     batchDownloadZipButton.disabled = false;
                     batchDownloadZipButton.innerHTML = '<span class="icon">📦</span> 打包下载所有文件 (ZIP)';
                 }
@@ -1071,9 +1012,7 @@
                 try {
                     let downloadCount = 0;
                     
-                    // 依次下载每个文件
                     for (const file of convertedFiles) {
-                        // 创建下载链接
                         const a = document.createElement('a');
                         a.href = file.url;
                         a.download = file.name;
@@ -1082,15 +1021,11 @@
                         document.body.removeChild(a);
                         
                         downloadCount++;
-                        
-                        // 更新按钮文本显示进度
                         batchDownloadDirectButton.textContent = `正在下载 (${downloadCount}/${convertedFiles.length})...`;
                         
-                        // 添加短暂延迟，避免浏览器阻止多个同时下载
                         await new Promise(resolve => setTimeout(resolve, 300));
                     }
                     
-                    // 重新启用按钮
                     batchDownloadDirectButton.disabled = false;
                     batchDownloadDirectButton.innerHTML = '<span class="icon">📁</span> 直接批量下载';
                     
@@ -1099,7 +1034,6 @@
                     console.error('批量下载时出错:', error);
                     showStatus('批量下载时出错: ' + error.message, 'error');
                     
-                    // 重新启用按钮
                     batchDownloadDirectButton.disabled = false;
                     batchDownloadDirectButton.innerHTML = '<span class="icon">📁</span> 直接批量下载';
                 }
