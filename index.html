@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VTT 转 LRC 转换器 (修正版)</title>
+    <title>VTT 转 LRC 转换器 (优化版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * {
@@ -628,7 +628,7 @@
                 
                 // 验证文件
                 filesArray.forEach(file => {
-                    // 检查文件类型
+                    // 检查文件类型 (Check for both type and extension to be safe)
                     if (!file.name.toLowerCase().endsWith('.vtt')) {
                         showStatus(`文件 "${file.name}" 不是有效的VTT文件`, 'error');
                         hasErrors = true;
@@ -890,7 +890,8 @@
                         const totalStartMinutes = startHours * 60 + startMinutes;
                         const fmtMin = totalStartMinutes.toString().padStart(2, '0');
                         const fmtSec = startSeconds.toString().padStart(2, '0');
-                        const fmtMs = Math.round(startMs / 10).toString().padStart(2, '0');
+                        // 修正：使用 floor 而不是 round，避免 995-999ms 變成 100
+                        const fmtMs = Math.floor(startMs / 10).toString().padStart(2, '0');
                         
                         currentStartTime = `[${fmtMin}:${fmtSec}.${fmtMs}]`;
                         
