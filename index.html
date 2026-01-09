@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VTT 转 LRC 转换器 (优化版)</title>
+    <title>字幕转 LRC 万能转换器 (VTT/ASS/SRT)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * {
@@ -425,6 +425,20 @@
             color: #555;
         }
         
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            border-radius: 4px;
+            margin-right: 5px;
+            color: white;
+        }
+        
+        .badge-vtt { background-color: #3498db; }
+        .badge-ass { background-color: #9b59b6; }
+        .badge-srt { background-color: #e67e22; }
+        
         @media (max-width: 600px) {
             .container {
                 padding: 20px;
@@ -453,27 +467,28 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎵 VTT 转 LRC 转换器</h1>
+        <h1>🎵 字幕转 LRC 万能转换器</h1>
         
         <div id="browser-support" class="browser-support" style="display: none;">
             <span class="icon">⚠️</span> 您的浏览器不支持文件上传功能，请使用现代浏览器如Chrome、Firefox或Edge。
         </div>
         
         <div id="upload-section" class="upload-section">
-            <div class="upload-title">📁 选择 VTT 文件</div>
+            <div class="upload-title">📁 选择字幕文件</div>
             
             <div class="file-input-container">
                 <label for="file-input" class="file-input-label">
-                    <span class="icon">📂</span> 点击选择 VTT 文件（可多选）
+                    <span class="icon">📂</span> 点击选择字幕文件 (VTT/ASS/SRT/STR)
                 </label>
-                <input type="file" id="file-input" accept=".vtt" multiple>
+                <!-- 更新 accept 属性以支持更多格式 -->
+                <input type="file" id="file-input" accept=".vtt,.ass,.ssa,.srt,.str" multiple>
             </div>
             
             <div class="drag-drop-area" id="drag-drop-area">
-                <span class="icon">📁</span> 或者拖放 VTT 文件到这里
+                <span class="icon">📁</span> 或者拖放字幕文件到这里
             </div>
             
-            <div class="file-info">支持格式：.vtt，单个文件最大10MB</div>
+            <div class="file-info">支持格式：.vtt, .ass, .ssa, .srt, .str (单个文件最大10MB)</div>
             <div id="file-list" class="file-list">未选择文件</div>
         </div>
         
@@ -485,23 +500,29 @@
                 <label for="remove-nested-ext" class="option-label">
                     <div>去除嵌套扩展名</div>
                     <div class="option-description">
-                        移除文件名中的所有音频/视频扩展名，只保留基本文件名
+                        移除文件名中的所有音频/视频/旧字幕扩展名，只保留基本文件名
                     </div>
                 </label>
             </div>
             
             <div class="example-box">
                 <div class="example-item">
-                    <strong>启用此选项：</strong><br>
-                    <span>song.mp3.vtt</span> <span class="example-arrow">→</span> <span>song.lrc</span><br>
-                    <span>video.wav.vtt</span> <span class="example-arrow">→</span> <span>video.lrc</span><br>
-                    <span>audio.flac.vtt</span> <span class="example-arrow">→</span> <span>audio.lrc</span>
+                    <span class="badge badge-vtt">VTT</span>
+                    <strong>示例：</strong><br>
+                    <span>song.mp3.vtt</span> <span class="example-arrow">→</span> <span>song.lrc</span>
                 </div>
                 <div class="example-item">
-                    <strong>禁用此选项：</strong><br>
-                    <span>song.mp3.vtt</span> <span class="example-arrow">→</span> <span>song.mp3.lrc</span><br>
-                    <span>video.wav.vtt</span> <span class="example-arrow">→</span> <span>video.wav.lrc</span><br>
-                    <span>audio.flac.vtt</span> <span class="example-arrow">→</span> <span>audio.flac.lrc</span>
+                    <span class="badge badge-ass">ASS</span>
+                    <strong>示例：</strong><br>
+                    <span>anime.mkv.ass</span> <span class="example-arrow">→</span> <span>anime.lrc</span>
+                </div>
+                <div class="example-item">
+                    <span class="badge badge-srt">SRT</span>
+                    <strong>示例：</strong><br>
+                    <span>movie.srt</span> <span class="example-arrow">→</span> <span>movie.lrc</span>
+                </div>
+                <div class="example-item" style="margin-top: 8px; font-size: 0.85em; color: #555;">
+                    注意：ASS 格式会自动过滤样式代码 (如 {\...})。STR 将被视为 SRT 处理。
                 </div>
             </div>
         </div>
@@ -558,6 +579,9 @@
             let selectedFiles = [];
             let convertedFiles = [];
             const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+            
+            // 支持的扩展名列表
+            const SUPPORTED_EXTS = ['.vtt', '.ass', '.ssa', '.srt', '.str'];
             
             // 文件选择事件
             fileInput.addEventListener('change', handleFileSelect);
@@ -620,6 +644,11 @@
                 handleFiles(files);
             }
             
+            // 获取文件扩展名
+            function getExtension(filename) {
+                return filename.slice((filename.lastIndexOf(".") - 1 >>> 0) + 2).toLowerCase();
+            }
+            
             // 处理文件
             function handleFiles(files) {
                 const filesArray = Array.from(files);
@@ -628,9 +657,11 @@
                 
                 // 验证文件
                 filesArray.forEach(file => {
-                    // 检查文件类型 (Check for both type and extension to be safe)
-                    if (!file.name.toLowerCase().endsWith('.vtt')) {
-                        showStatus(`文件 "${file.name}" 不是有效的VTT文件`, 'error');
+                    const ext = '.' + getExtension(file.name);
+                    
+                    // 检查文件类型
+                    if (!SUPPORTED_EXTS.includes(ext)) {
+                        showStatus(`文件 "${file.name}" 不支持的格式 (仅支持 ${SUPPORTED_EXTS.join(', ')})`, 'error');
                         hasErrors = true;
                         return;
                     }
@@ -719,7 +750,7 @@
             // 转换按钮点击事件
             convertButton.addEventListener('click', function() {
                 if (selectedFiles.length === 0) {
-                    showStatus('请先选择VTT文件', 'error');
+                    showStatus('请先选择字幕文件', 'error');
                     return;
                 }
                 
@@ -747,9 +778,21 @@
                     try {
                         // 读取文件内容
                         const content = await readFileContent(file);
+                        const ext = '.' + getExtension(file.name);
                         
-                        // 转换VTT到LRC (使用修正后的函数)
-                        const lrcContent = convertVttToLrc(content, file.name, removeNestedExt);
+                        let lrcContent;
+                        
+                        // 根据扩展名选择转换器
+                        if (ext === '.vtt') {
+                            lrcContent = convertVttToLrc(content, file.name, removeNestedExt);
+                        } else if (ext === '.srt' || ext === '.str') {
+                            // .str 视为 .srt 处理
+                            lrcContent = convertSrtToLrc(content, file.name, removeNestedExt);
+                        } else if (ext === '.ass' || ext === '.ssa') {
+                            lrcContent = convertAssToLrc(content, file.name, removeNestedExt);
+                        } else {
+                            throw new Error('不支持的文件格式');
+                        }
                         
                         // 获取正确的文件名（根据用户选择）
                         const baseName = getFileNameWithoutExtension(file.name, removeNestedExt);
@@ -770,7 +813,7 @@
                         successCount++;
                     } catch (error) {
                         console.error(`处理 ${file.name} 时出错:`, error);
-                        showStatus(`处理文件 "${file.name}" 时出错: ${error.message}`, 'error');
+                        showStatus(`处理文件 "${file.name}" 时出错`, 'error');
                     }
                     
                     processedCount++;
@@ -822,10 +865,10 @@
                     '.3gp', '.asf', '.rm', '.rmvb', '.vob', '.ogv', '.dv', 'ts'
                 ];
                 
-                // 已知的字幕文件扩展名
+                // 已知的字幕文件扩展名 (增加了新支持的格式)
                 const subtitleExtensions = [
                     '.vtt', '.srt', '.sub', '.sbv', '.ass', '.ssa', 
-                    '.webvtt', '.ttml', '.dfxp', '.smi', '.sami'
+                    '.webvtt', '.ttml', '.dfxp', '.smi', '.sami', '.str'
                 ];
                 
                 const allExtensions = [...audioExtensions, ...videoExtensions, ...subtitleExtensions]
@@ -851,14 +894,16 @@
                     }
                     return result;
                 } else {
-                    if (lowerFilename.endsWith('.vtt')) {
-                        return filename.substring(0, filename.length - 4);
+                    // 只去掉最后一个扩展名
+                    const lastDotIndex = filename.lastIndexOf('.');
+                    if (lastDotIndex > 0) {
+                        return filename.substring(0, lastDotIndex);
                     }
                     return filename;
                 }
             }
             
-            // 修正後的核心轉換函數
+            // --- VTT 转换器 ---
             function convertVttToLrc(vttContent, fileName, removeNested) {
                 const lines = vttContent.split('\n');
                 const lrcLines = [];
@@ -909,7 +954,131 @@
                 }
                 
                 const baseName = getFileNameWithoutExtension(fileName, removeNested);
-                // 修正 Ti 標籤
+                let lrcContent = `[ti:${baseName}]\n[by: 网页版转换器]\n`;
+                lrcContent += lrcLines.join("");
+                
+                return lrcContent;
+            }
+
+            // --- SRT 转换器 ---
+            function convertSrtToLrc(srtContent, fileName, removeNested) {
+                // 标准 SRT 格式：序号 \n 时间轴 \n 文本
+                const blocks = srtContent.trim().split(/\n\s*\n/);
+                const lrcLines = [];
+
+                // SRT 时间轴正则: 00:00:00,000 --> 00:00:05,000
+                const timeRegex = /(\d{2}):(\d{2}):(\d{2}),(\d{3})\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}/;
+
+                for (const block of blocks) {
+                    const lines = block.split('\n');
+                    let timeLine = "";
+                    let textLines = [];
+
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        
+                        const timeMatch = line.match(timeRegex);
+                        if (timeMatch) {
+                            // 提取开始时间
+                            const hours = parseInt(timeMatch[1]);
+                            const minutes = parseInt(timeMatch[2]);
+                            const seconds = parseInt(timeMatch[3]);
+                            const ms = parseInt(timeMatch[4]);
+
+                            const totalMinutes = hours * 60 + minutes;
+                            const fmtMin = totalMinutes.toString().padStart(2, '0');
+                            const fmtSec = seconds.toString().padStart(2, '0');
+                            const fmtMs = Math.floor(ms / 10).toString().padStart(2, '0');
+
+                            timeLine = `[${fmtMin}:${fmtSec}.${fmtMs}]`;
+                        } else if (timeLine && line && !/^\d+$/.test(line)) {
+                            // 如果已经找到时间，且当前行不是纯数字序号，则为歌词
+                            // 去除 HTML 标签
+                            const cleanLine = line.replace(/<[^>]+>/g, '').replace(/\{[^}]*\}/g, '');
+                            textLines.push(cleanLine);
+                        }
+                    }
+
+                    if (timeLine && textLines.length > 0) {
+                        lrcLines.push(timeLine + textLines.join(" ") + "\n");
+                    }
+                }
+
+                const baseName = getFileNameWithoutExtension(fileName, removeNested);
+                let lrcContent = `[ti:${baseName}]\n[by: 网页版转换器]\n`;
+                lrcContent += lrcLines.join("");
+                
+                return lrcContent;
+            }
+
+            // --- ASS 转换器 ---
+            function convertAssToLrc(assContent, fileName, removeNested) {
+                const lines = assContent.split('\n');
+                const lrcLines = [];
+
+                // ASS 时间格式: H:MM:SS.CC (小时可能没有前导零)
+                // 行格式: Dialogue: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
+                // 注意：前9个字段是用逗号分隔的，但 Text 字段内部可能包含逗号，所以要特殊处理
+                
+                for (let i = 0; i < lines.length; i++) {
+                    let line = lines[i].trim();
+                    
+                    if (!line.startsWith("Dialogue:")) continue;
+                    
+                    // 移除 "Dialogue:" 前缀
+                    line = line.substring(9).trim();
+                    
+                    // 分割前9个字段
+                    const parts = [];
+                    let currentPart = "";
+                    let commaCount = 0;
+                    
+                    for (let char of line) {
+                        if (char === ',' && commaCount < 9) {
+                            parts.push(currentPart);
+                            currentPart = "";
+                            commaCount++;
+                        } else {
+                            currentPart += char;
+                        }
+                    }
+                    // 剩下的部分作为 Text
+                    parts.push(currentPart);
+                    
+                    if (parts.length < 10) continue; // 格式不正确
+                    
+                    const startTime = parts[1].trim(); // Start time field (index 1)
+                    let text = parts[9].trim();       // Text field (index 9)
+                    
+                    // 解析时间: H:MM:SS.CC
+                    const timeMatch = startTime.match(/(\d+):(\d{2}):(\d{2})\.(\d{2})/);
+                    if (!timeMatch) continue;
+                    
+                    const hours = parseInt(timeMatch[1]);
+                    const minutes = parseInt(timeMatch[2]);
+                    const seconds = parseInt(timeMatch[3]);
+                    const centiseconds = parseInt(timeMatch[4]); // ASS 使用 centisecond (1/100s)
+                    
+                    const totalMinutes = hours * 60 + minutes;
+                    const fmtMin = totalMinutes.toString().padStart(2, '0');
+                    const fmtSec = seconds.toString().padStart(2, '0');
+                    // ASS centiseconds 直接对应 LRC 的 hundredths (xx)
+                    const fmtCs = centiseconds.toString().padStart(2, '0');
+                    
+                    const lrcTime = `[${fmtMin}:${fmtSec}.${fmtCs}]`;
+                    
+                    // 清理文本：移除 ASS 样式标签 {\...} 和 HTML 标签
+                    // ASS 标签示例: {\pos(400,570)}{\fs26}{\c&HFFFFFF&}
+                    text = text.replace(/\{[^}]*\}/g, '');
+                    text = text.replace(/\\N/g, ' '); // 处理 ASS 的强制换行符
+                    text = text.replace(/\\n/g, ' ');
+                    
+                    if (text) {
+                        lrcLines.push(lrcTime + text + "\n");
+                    }
+                }
+
+                const baseName = getFileNameWithoutExtension(fileName, removeNested);
                 let lrcContent = `[ti:${baseName}]\n[by: 网页版转换器]\n`;
                 lrcContent += lrcLines.join("");
                 
@@ -990,7 +1159,7 @@
                                   now.getMinutes().toString().padStart(2, '0') + 
                                   now.getSeconds().toString().padStart(2, '0');
                     
-                    a.download = 'VTT转LRC文件_' + dateStr + '.zip';
+                    a.download = '字幕转LRC文件_' + dateStr + '.zip';
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
