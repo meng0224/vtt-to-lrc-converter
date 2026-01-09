@@ -960,14 +960,15 @@
                 return lrcContent;
             }
 
-            // --- SRT 转换器 ---
+            // --- SRT 转换器 (已更新) ---
             function convertSrtToLrc(srtContent, fileName, removeNested) {
                 // 标准 SRT 格式：序号 \n 时间轴 \n 文本
                 const blocks = srtContent.trim().split(/\n\s*\n/);
                 const lrcLines = [];
 
                 // SRT 时间轴正则: 00:00:00,000 --> 00:00:05,000
-                const timeRegex = /(\d{2}):(\d{2}):(\d{2}),(\d{3})\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}/;
+                // 更新：支持逗号 (,) 和 点 (.) 作为分隔符，提高兼容性
+                const timeRegex = /(\d{2}):(\d{2}):(\d{2})[,.](\d{3})\s*-->\s*\d{2}:\d{2}:\d{2}[,.]\d{3}/;
 
                 for (const block of blocks) {
                     const lines = block.split('\n');
