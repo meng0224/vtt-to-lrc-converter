@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>字幕转 LRC 万能转换器 (VTT/ASS/SRT)</title>
+    <title>字幕轉 LRC 萬能轉換器 (VTT/ASS/SRT)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * {
@@ -467,40 +467,40 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎵 字幕转 LRC 万能转换器</h1>
+        <h1>🎵 字幕轉 LRC 萬能轉換器</h1>
         
         <div id="browser-support" class="browser-support" style="display: none;">
-            <span class="icon">⚠️</span> 您的浏览器不支持文件上传功能，请使用现代浏览器如Chrome、Firefox或Edge。
+            <span class="icon">⚠️</span> 您的瀏覽器不支援檔案上傳功能，請使用現代瀏覽器如 Chrome、Firefox 或 Edge。
         </div>
         
         <div id="upload-section" class="upload-section">
-            <div class="upload-title">📁 选择字幕文件</div>
+            <div class="upload-title">📁 選擇字幕檔案</div>
             
             <div class="file-input-container">
                 <label for="file-input" class="file-input-label">
-                    <span class="icon">📂</span> 点击选择字幕文件 (VTT/ASS/SRT/STR)
+                    <span class="icon">📂</span> 點擊選擇字幕檔案 (VTT/ASS/SRT/STR)
                 </label>
-                <!-- 更新 accept 属性以支持更多格式 -->
+                <!-- 更新 accept 屬性以支援更多格式 -->
                 <input type="file" id="file-input" accept=".vtt,.ass,.ssa,.srt,.str" multiple>
             </div>
             
             <div class="drag-drop-area" id="drag-drop-area">
-                <span class="icon">📁</span> 或者拖放字幕文件到这里
+                <span class="icon">📁</span> 或者拖放字幕檔案到這裡
             </div>
             
-            <div class="file-info">支持格式：.vtt, .ass, .ssa, .srt, .str (单个文件最大10MB)</div>
-            <div id="file-list" class="file-list">未选择文件</div>
+            <div class="file-info">支援格式：.vtt, .ass, .ssa, .srt, .str (單個檔案最大 10MB)</div>
+            <div id="file-list" class="file-list">未選擇檔案</div>
         </div>
         
         <div class="options-section">
-            <div class="options-title">⚙️ 转换选项</div>
+            <div class="options-title">⚙️ 轉換選項</div>
             
             <div class="option-item">
                 <input type="checkbox" id="remove-nested-ext" class="option-checkbox" checked>
                 <label for="remove-nested-ext" class="option-label">
-                    <div>去除嵌套扩展名</div>
+                    <div>去除巢狀副檔名</div>
                     <div class="option-description">
-                        移除文件名中的所有音频/视频/旧字幕扩展名，只保留基本文件名
+                        移除檔名中的所有音訊/視訊/舊字幕副檔名，只保留基本檔名
                     </div>
                 </label>
             </div>
@@ -508,28 +508,28 @@
             <div class="example-box">
                 <div class="example-item">
                     <span class="badge badge-vtt">VTT</span>
-                    <strong>示例：</strong><br>
+                    <strong>範例：</strong><br>
                     <span>song.mp3.vtt</span> <span class="example-arrow">→</span> <span>song.lrc</span>
                 </div>
                 <div class="example-item">
                     <span class="badge badge-ass">ASS</span>
-                    <strong>示例：</strong><br>
+                    <strong>範例：</strong><br>
                     <span>anime.mkv.ass</span> <span class="example-arrow">→</span> <span>anime.lrc</span>
                 </div>
                 <div class="example-item">
                     <span class="badge badge-srt">SRT</span>
-                    <strong>示例：</strong><br>
+                    <strong>範例：</strong><br>
                     <span>movie.srt</span> <span class="example-arrow">→</span> <span>movie.lrc</span>
                 </div>
                 <div class="example-item" style="margin-top: 8px; font-size: 0.85em; color: #555;">
-                    注意：ASS 格式会自动过滤样式代码 (如 {\...})。STR 将被视为 SRT 处理。
+                    注意：ASS 格式會自動過濾樣式代碼 (如 {\...})。STR 將被視為 SRT 處理。
                 </div>
             </div>
         </div>
         
         <div class="convert-section">
             <button id="convert-button" class="convert-button">
-                <span class="icon">🔄</span> 开始转换
+                <span class="icon">🔄</span> 開始轉換
             </button>
             <div class="progress-container">
                 <div id="progress-bar" class="progress-bar"></div>
@@ -539,14 +539,14 @@
         <div id="status-message" class="status-message" style="display: none;"></div>
         
         <div id="results-section" class="results-section">
-            <div class="results-title">✅ 转换结果</div>
+            <div class="results-title">✅ 轉換結果</div>
             <div id="results-container"></div>
             <div class="batch-download-container">
                 <button id="batch-download-zip" class="batch-download-button zip-download-button">
-                    <span class="icon">📦</span> 打包下载所有文件 (ZIP)
+                    <span class="icon">📦</span> 打包下載所有檔案 (ZIP)
                 </button>
                 <button id="batch-download-direct" class="batch-download-button direct-download-button">
-                    <span class="icon">📁</span> 直接批量下载
+                    <span class="icon">📁</span> 直接批次下載
                 </button>
             </div>
         </div>
@@ -554,7 +554,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 检查浏览器是否支持File API
+            // 檢查瀏覽器是否支援 File API
             if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
                 document.getElementById('browser-support').style.display = 'block';
                 document.getElementById('upload-section').classList.add('disabled');
@@ -580,10 +580,10 @@
             let convertedFiles = [];
             const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
             
-            // 支持的扩展名列表
+            // 支援的副檔名列表
             const SUPPORTED_EXTS = ['.vtt', '.ass', '.ssa', '.srt', '.str'];
             
-            // 文件选择事件
+            // 檔案選擇事件
             fileInput.addEventListener('change', handleFileSelect);
             
             // 拖放事件
@@ -608,67 +608,67 @@
                 handleFiles(files);
             });
             
-            // 打包下载按钮事件
+            // 打包下載按鈕事件
             batchDownloadZipButton.addEventListener('click', function() {
                 if (convertedFiles.length === 0) {
-                    showStatus('没有可下载的文件', 'error');
+                    showStatus('沒有可下載的檔案', 'error');
                     return;
                 }
                 
-                // 禁用按钮防止重复点击
+                // 禁用按鈕防止重複點擊
                 batchDownloadZipButton.disabled = true;
                 batchDownloadZipButton.textContent = '正在打包...';
                 
-                // 创建ZIP文件
+                // 建立 ZIP 檔案
                 createAndDownloadZip();
             });
             
-            // 直接批量下载按钮事件
+            // 直接批次下載按鈕事件
             batchDownloadDirectButton.addEventListener('click', function() {
                 if (convertedFiles.length === 0) {
-                    showStatus('没有可下载的文件', 'error');
+                    showStatus('沒有可下載的檔案', 'error');
                     return;
                 }
                 
-                // 禁用按钮防止重复点击
+                // 禁用按鈕防止重複點擊
                 batchDownloadDirectButton.disabled = true;
-                batchDownloadDirectButton.textContent = '正在下载...';
+                batchDownloadDirectButton.textContent = '正在下載...';
                 
-                // 直接批量下载所有文件
+                // 直接批次下載所有檔案
                 directBatchDownload();
             });
             
-            // 处理文件选择
+            // 處理檔案選擇
             function handleFileSelect(e) {
                 const files = e.target.files;
                 handleFiles(files);
             }
             
-            // 获取文件扩展名
+            // 獲取檔案副檔名
             function getExtension(filename) {
                 return filename.slice((filename.lastIndexOf(".") - 1 >>> 0) + 2).toLowerCase();
             }
             
-            // 处理文件
+            // 處理檔案
             function handleFiles(files) {
                 const filesArray = Array.from(files);
                 selectedFiles = [];
                 let hasErrors = false;
                 
-                // 验证文件
+                // 驗證檔案
                 filesArray.forEach(file => {
                     const ext = '.' + getExtension(file.name);
                     
-                    // 检查文件类型
+                    // 檢查檔案類型
                     if (!SUPPORTED_EXTS.includes(ext)) {
-                        showStatus(`文件 "${file.name}" 不支持的格式 (仅支持 ${SUPPORTED_EXTS.join(', ')})`, 'error');
+                        showStatus(`檔案 "${file.name}" 不支援的格式 (僅支援 ${SUPPORTED_EXTS.join(', ')})`, 'error');
                         hasErrors = true;
                         return;
                     }
                     
-                    // 检查文件大小
+                    // 檢查檔案大小
                     if (file.size > MAX_FILE_SIZE) {
-                        showStatus(`文件 "${file.name}" 超过10MB大小限制`, 'error');
+                        showStatus(`檔案 "${file.name}" 超過 10MB 大小限制`, 'error');
                         hasErrors = true;
                         return;
                     }
@@ -680,16 +680,16 @@
                 resetConversion();
                 
                 if (hasErrors) {
-                    showStatus('部分文件不符合要求，请检查', 'warning');
+                    showStatus('部分檔案不符合要求，請檢查', 'warning');
                 } else if (selectedFiles.length > 0) {
-                    showStatus(`已选择 ${selectedFiles.length} 个文件`, 'info');
+                    showStatus(`已選擇 ${selectedFiles.length} 個檔案`, 'info');
                 }
             }
             
-            // 更新文件列表显示
+            // 更新檔案列表顯示
             function updateFileList() {
                 if (selectedFiles.length === 0) {
-                    fileList.innerHTML = '<div style="text-align: center; color: #666;">未选择文件</div>';
+                    fileList.innerHTML = '<div style="text-align: center; color: #666;">未選擇檔案</div>';
                     return;
                 }
                 
@@ -712,7 +712,7 @@
                 });
             }
             
-            // 格式化文件大小
+            // 格式化檔案大小
             function formatFileSize(bytes) {
                 if (bytes === 0) return '0 Bytes';
                 const k = 1024;
@@ -721,7 +721,7 @@
                 return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
             }
             
-            // 显示状态消息
+            // 顯示狀態訊息
             function showStatus(message, type) {
                 statusMessage.textContent = message;
                 statusMessage.className = 'status-message status-' + type;
@@ -734,7 +734,7 @@
                 }
             }
             
-            // 重置转换状态
+            // 重置轉換狀態
             function resetConversion() {
                 convertButton.disabled = false;
                 progressBar.style.width = '0%';
@@ -743,62 +743,62 @@
                 convertedFiles = [];
                 batchDownloadZipButton.disabled = false;
                 batchDownloadDirectButton.disabled = false;
-                batchDownloadZipButton.innerHTML = '<span class="icon">📦</span> 打包下载所有文件 (ZIP)';
-                batchDownloadDirectButton.innerHTML = '<span class="icon">📁</span> 直接批量下载';
+                batchDownloadZipButton.innerHTML = '<span class="icon">📦</span> 打包下載所有檔案 (ZIP)';
+                batchDownloadDirectButton.innerHTML = '<span class="icon">📁</span> 直接批次下載';
             }
             
-            // 转换按钮点击事件
+            // 轉換按鈕點擊事件
             convertButton.addEventListener('click', function() {
                 if (selectedFiles.length === 0) {
-                    showStatus('请先选择字幕文件', 'error');
+                    showStatus('請先選擇字幕檔案', 'error');
                     return;
                 }
                 
-                // 禁用按钮
+                // 禁用按鈕
                 convertButton.disabled = true;
                 
-                // 重置状态
+                // 重置狀態
                 resetConversion();
-                showStatus('正在转换文件...', 'info');
+                showStatus('正在轉換檔案...', 'info');
                 
-                // 处理文件转换
+                // 處理檔案轉換
                 processFiles();
             });
             
-            // 处理文件转换
+            // 處理檔案轉換
             async function processFiles() {
                 const totalFiles = selectedFiles.length;
                 let processedCount = 0;
                 let successCount = 0;
                 
-                // 获取用户选择的选项
+                // 獲取用戶選擇的選項
                 const removeNestedExt = removeNestedExtCheckbox.checked;
                 
                 for (const file of selectedFiles) {
                     try {
-                        // 读取文件内容
+                        // 讀取檔案內容
                         const content = await readFileContent(file);
                         const ext = '.' + getExtension(file.name);
                         
                         let lrcContent;
                         
-                        // 根据扩展名选择转换器
+                        // 根據副檔名選擇轉換器
                         if (ext === '.vtt') {
                             lrcContent = convertVttToLrc(content, file.name, removeNestedExt);
                         } else if (ext === '.srt' || ext === '.str') {
-                            // .str 视为 .srt 处理
+                            // .str 視為 .srt 處理
                             lrcContent = convertSrtToLrc(content, file.name, removeNestedExt);
                         } else if (ext === '.ass' || ext === '.ssa') {
                             lrcContent = convertAssToLrc(content, file.name, removeNestedExt);
                         } else {
-                            throw new Error('不支持的文件格式');
+                            throw new Error('不支援的檔案格式');
                         }
                         
-                        // 获取正确的文件名（根据用户选择）
+                        // 獲取正確的檔名（根據用戶選擇）
                         const baseName = getFileNameWithoutExtension(file.name, removeNestedExt);
                         const lrcFileName = baseName + '.lrc';
                         
-                        // 创建下载链接
+                        // 建立下載連結
                         const blob = new Blob([lrcContent], { type: 'text/plain' });
                         const url = URL.createObjectURL(blob);
                         
@@ -807,39 +807,39 @@
                             url: url,
                             originalName: file.name,
                             size: blob.size,
-                            content: lrcContent  // 保存内容用于批量下载
+                            content: lrcContent  // 保存內容用於批次下載
                         });
                         
                         successCount++;
                     } catch (error) {
-                        console.error(`处理 ${file.name} 时出错:`, error);
-                        showStatus(`处理文件 "${file.name}" 时出错`, 'error');
+                        console.error(`處理 ${file.name} 時出錯:`, error);
+                        showStatus(`處理檔案 "${file.name}" 時出錯`, 'error');
                     }
                     
                     processedCount++;
                     updateProgress((processedCount / totalFiles) * 100);
                 }
                 
-                // 转换完成
+                // 轉換完成
                 if (successCount === totalFiles) {
-                    showStatus(`成功转换了 ${successCount} 个文件！`, 'success');
+                    showStatus(`成功轉換了 ${successCount} 個檔案！`, 'success');
                 } else {
-                    showStatus(`转换完成！成功: ${successCount} 个，失败: ${totalFiles - successCount} 个`, 'info');
+                    showStatus(`轉換完成！成功: ${successCount} 個，失敗: ${totalFiles - successCount} 個`, 'info');
                 }
                 
-                // 显示结果
+                // 顯示結果
                 showResults();
                 
-                // 重新启用按钮
+                // 重新啟用按鈕
                 convertButton.disabled = false;
             }
             
-            // 更新进度条
+            // 更新進度條
             function updateProgress(percent) {
                 progressBar.style.width = `${percent}%`;
             }
             
-            // 读取文件内容
+            // 讀取檔案內容
             function readFileContent(file) {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
@@ -849,23 +849,23 @@
                 });
             }
             
-            // 获取不带扩展名的文件名
+            // 獲取不帶副檔名的檔名
             function getFileNameWithoutExtension(filename, removeNested = false) {
                 const lowerFilename = filename.toLowerCase();
                 
-                // 已知的音频文件扩展名
+                // 已知的音訊檔案副檔名
                 const audioExtensions = [
                     '.mp3', '.wav', '.aac', '.flac', '.ogg', '.wma', '.m4a', '.opus',
                     '.aiff', '.au', '.ra', '.ac3', '.dts', '.amr', '.awb'
                 ];
                 
-                // 已知的视频文件扩展名
+                // 已知的視訊檔案副檔名
                 const videoExtensions = [
                     '.mp4', '.avi', '.mkv', '.flv', '.mov', '.wmv', '.webm', '.m4v',
                     '.3gp', '.asf', '.rm', '.rmvb', '.vob', '.ogv', '.dv', 'ts'
                 ];
                 
-                // 已知的字幕文件扩展名 (增加了新支持的格式)
+                // 已知的字幕檔案副檔名 (增加了新支援的格式)
                 const subtitleExtensions = [
                     '.vtt', '.srt', '.sub', '.sbv', '.ass', '.ssa', 
                     '.webvtt', '.ttml', '.dfxp', '.smi', '.sami', '.str'
@@ -894,7 +894,7 @@
                     }
                     return result;
                 } else {
-                    // 只去掉最后一个扩展名
+                    // 只去掉最後一個副檔名
                     const lastDotIndex = filename.lastIndexOf('.');
                     if (lastDotIndex > 0) {
                         return filename.substring(0, lastDotIndex);
@@ -903,7 +903,7 @@
                 }
             }
             
-            // --- VTT 转换器 ---
+            // --- VTT 轉換器 ---
             function convertVttToLrc(vttContent, fileName, removeNested) {
                 const lines = vttContent.split('\n');
                 const lrcLines = [];
@@ -911,7 +911,7 @@
                 let currentStartTime = "";
                 let currentSubtitle = []; 
                 
-                // 支持 HH:MM:SS.mmm 和 MM:SS.mmm 兩種格式
+                // 支援 HH:MM:SS.mmm 和 MM:SS.mmm 兩種格式
                 const timeRegex = /(?:(\d{1,2}):)?(\d{2}):(\d{2})\.(\d{3})\s+-->\s+(?:(\d{1,2}):)?(\d{2}):(\d{2})\.(\d{3})/;
                 
                 for (let i = 0; i < lines.length; i++) {
@@ -954,20 +954,20 @@
                 }
                 
                 const baseName = getFileNameWithoutExtension(fileName, removeNested);
-                let lrcContent = `[ti:${baseName}]\n[by: 网页版转换器]\n`;
+                let lrcContent = `[ti:${baseName}]\n[by: 網頁版轉換器]\n`;
                 lrcContent += lrcLines.join("");
                 
                 return lrcContent;
             }
 
-            // --- SRT 转换器 (已更新) ---
+            // --- SRT 轉換器 (已更新) ---
             function convertSrtToLrc(srtContent, fileName, removeNested) {
-                // 标准 SRT 格式：序号 \n 时间轴 \n 文本
+                // 標準 SRT 格式：序號 \n 時間軸 \n 文本
                 const blocks = srtContent.trim().split(/\n\s*\n/);
                 const lrcLines = [];
 
-                // SRT 时间轴正则: 00:00:00,000 --> 00:00:05,000
-                // 更新：支持逗号 (,) 和 点 (.) 作为分隔符，提高兼容性
+                // SRT 時間軸正則: 00:00:00,000 --> 00:00:05,000
+                // 更新：支援逗號 (,) 和 點 (.) 作為分隔符，提高相容性
                 const timeRegex = /(\d{2}):(\d{2}):(\d{2})[,.](\d{3})\s*-->\s*\d{2}:\d{2}:\d{2}[,.]\d{3}/;
 
                 for (const block of blocks) {
@@ -980,7 +980,7 @@
                         
                         const timeMatch = line.match(timeRegex);
                         if (timeMatch) {
-                            // 提取开始时间
+                            // 提取開始時間
                             const hours = parseInt(timeMatch[1]);
                             const minutes = parseInt(timeMatch[2]);
                             const seconds = parseInt(timeMatch[3]);
@@ -993,8 +993,8 @@
 
                             timeLine = `[${fmtMin}:${fmtSec}.${fmtMs}]`;
                         } else if (timeLine && line && !/^\d+$/.test(line)) {
-                            // 如果已经找到时间，且当前行不是纯数字序号，则为歌词
-                            // 去除 HTML 标签
+                            // 如果已經找到時間，且當前行不是純數字序號，則為歌詞
+                            // 去除 HTML 標籤
                             const cleanLine = line.replace(/<[^>]+>/g, '').replace(/\{[^}]*\}/g, '');
                             textLines.push(cleanLine);
                         }
@@ -1006,30 +1006,30 @@
                 }
 
                 const baseName = getFileNameWithoutExtension(fileName, removeNested);
-                let lrcContent = `[ti:${baseName}]\n[by: 网页版转换器]\n`;
+                let lrcContent = `[ti:${baseName}]\n[by: 網頁版轉換器]\n`;
                 lrcContent += lrcLines.join("");
                 
                 return lrcContent;
             }
 
-            // --- ASS 转换器 ---
+            // --- ASS 轉換器 ---
             function convertAssToLrc(assContent, fileName, removeNested) {
                 const lines = assContent.split('\n');
                 const lrcLines = [];
 
-                // ASS 时间格式: H:MM:SS.CC (小时可能没有前导零)
+                // ASS 時間格式: H:MM:SS.CC (小時可能沒有前導零)
                 // 行格式: Dialogue: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
-                // 注意：前9个字段是用逗号分隔的，但 Text 字段内部可能包含逗号，所以要特殊处理
+                // 注意：前9個欄位是用逗號分隔的，但 Text 欄位內部可能包含逗號，所以要特殊處理
                 
                 for (let i = 0; i < lines.length; i++) {
                     let line = lines[i].trim();
                     
                     if (!line.startsWith("Dialogue:")) continue;
                     
-                    // 移除 "Dialogue:" 前缀
+                    // 移除 "Dialogue:" 前綴
                     line = line.substring(9).trim();
                     
-                    // 分割前9个字段
+                    // 分割前9個欄位
                     const parts = [];
                     let currentPart = "";
                     let commaCount = 0;
@@ -1043,15 +1043,15 @@
                             currentPart += char;
                         }
                     }
-                    // 剩下的部分作为 Text
+                    // 剩下的部分作為 Text
                     parts.push(currentPart);
                     
-                    if (parts.length < 10) continue; // 格式不正确
+                    if (parts.length < 10) continue; // 格式不正確
                     
                     const startTime = parts[1].trim(); // Start time field (index 1)
                     let text = parts[9].trim();       // Text field (index 9)
                     
-                    // 解析时间: H:MM:SS.CC
+                    // 解析時間: H:MM:SS.CC
                     const timeMatch = startTime.match(/(\d+):(\d{2}):(\d{2})\.(\d{2})/);
                     if (!timeMatch) continue;
                     
@@ -1063,15 +1063,15 @@
                     const totalMinutes = hours * 60 + minutes;
                     const fmtMin = totalMinutes.toString().padStart(2, '0');
                     const fmtSec = seconds.toString().padStart(2, '0');
-                    // ASS centiseconds 直接对应 LRC 的 hundredths (xx)
+                    // ASS centiseconds 直接對應 LRC 的 hundredths (xx)
                     const fmtCs = centiseconds.toString().padStart(2, '0');
                     
                     const lrcTime = `[${fmtMin}:${fmtSec}.${fmtCs}]`;
                     
-                    // 清理文本：移除 ASS 样式标签 {\...} 和 HTML 标签
-                    // ASS 标签示例: {\pos(400,570)}{\fs26}{\c&HFFFFFF&}
+                    // 清理文本：移除 ASS 樣式標籤 {\...} 和 HTML 標籤
+                    // ASS 標籤範例: {\pos(400,570)}{\fs26}{\c&HFFFFFF&}
                     text = text.replace(/\{[^}]*\}/g, '');
-                    text = text.replace(/\\N/g, ' '); // 处理 ASS 的强制换行符
+                    text = text.replace(/\\N/g, ' '); // 處理 ASS 的強制換行符
                     text = text.replace(/\\n/g, ' ');
                     
                     if (text) {
@@ -1080,13 +1080,13 @@
                 }
 
                 const baseName = getFileNameWithoutExtension(fileName, removeNested);
-                let lrcContent = `[ti:${baseName}]\n[by: 网页版转换器]\n`;
+                let lrcContent = `[ti:${baseName}]\n[by: 網頁版轉換器]\n`;
                 lrcContent += lrcLines.join("");
                 
                 return lrcContent;
             }
             
-            // 显示转换结果
+            // 顯示轉換結果
             function showResults() {
                 if (convertedFiles.length === 0) return;
                 
@@ -1105,14 +1105,14 @@
                     
                     const resultStatus = document.createElement('div');
                     resultStatus.className = 'result-status';
-                    resultStatus.textContent = "转换成功 (" + formatFileSize(file.size) + ")";
+                    resultStatus.textContent = "轉換成功 (" + formatFileSize(file.size) + ")";
                     
                     resultInfo.appendChild(resultName);
                     resultInfo.appendChild(resultStatus);
                     
                     const downloadButton = document.createElement('button');
                     downloadButton.className = 'download-button';
-                    downloadButton.textContent = '下载 LRC 文件';
+                    downloadButton.textContent = '下載 LRC 檔案';
                     downloadButton.addEventListener('click', () => {
                         const a = document.createElement('a');
                         a.href = file.url;
@@ -1127,7 +1127,7 @@
                     resultsContainer.appendChild(resultItem);
                 });
                 
-                // 如果有多个文件，显示批量下载按钮
+                // 如果有多個檔案，顯示批次下載按鈕
                 if (convertedFiles.length > 1) {
                     batchDownloadZipButton.style.display = 'inline-block';
                     batchDownloadDirectButton.style.display = 'inline-block';
@@ -1139,7 +1139,7 @@
                 resultsSection.style.display = 'block';
             }
             
-            // 创建并下载ZIP文件
+            // 建立並下載 ZIP 檔案
             async function createAndDownloadZip() {
                 try {
                     const zip = new JSZip();
@@ -1160,25 +1160,25 @@
                                   now.getMinutes().toString().padStart(2, '0') + 
                                   now.getSeconds().toString().padStart(2, '0');
                     
-                    a.download = '字幕转LRC文件_' + dateStr + '.zip';
+                    a.download = '字幕轉LRC檔案_' + dateStr + '.zip';
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
                     
                     batchDownloadZipButton.disabled = false;
-                    batchDownloadZipButton.innerHTML = '<span class="icon">📦</span> 打包下载所有文件 (ZIP)';
+                    batchDownloadZipButton.innerHTML = '<span class="icon">📦</span> 打包下載所有檔案 (ZIP)';
                     
-                    showStatus('ZIP文件已生成并开始下载', 'success');
+                    showStatus('ZIP 檔案已生成並開始下載', 'success');
                 } catch (error) {
-                    console.error('创建ZIP文件时出错:', error);
-                    showStatus('创建ZIP文件时出错: ' + error.message, 'error');
+                    console.error('建立 ZIP 檔案時出錯:', error);
+                    showStatus('建立 ZIP 檔案時出錯: ' + error.message, 'error');
                     
                     batchDownloadZipButton.disabled = false;
-                    batchDownloadZipButton.innerHTML = '<span class="icon">📦</span> 打包下载所有文件 (ZIP)';
+                    batchDownloadZipButton.innerHTML = '<span class="icon">📦</span> 打包下載所有檔案 (ZIP)';
                 }
             }
             
-            // 直接批量下载所有文件
+            // 直接批次下載所有檔案
             async function directBatchDownload() {
                 try {
                     let downloadCount = 0;
@@ -1192,21 +1192,21 @@
                         document.body.removeChild(a);
                         
                         downloadCount++;
-                        batchDownloadDirectButton.textContent = `正在下载 (${downloadCount}/${convertedFiles.length})...`;
+                        batchDownloadDirectButton.textContent = `正在下載 (${downloadCount}/${convertedFiles.length})...`;
                         
                         await new Promise(resolve => setTimeout(resolve, 300));
                     }
                     
                     batchDownloadDirectButton.disabled = false;
-                    batchDownloadDirectButton.innerHTML = '<span class="icon">📁</span> 直接批量下载';
+                    batchDownloadDirectButton.innerHTML = '<span class="icon">📁</span> 直接批次下載';
                     
-                    showStatus(`已开始下载 ${downloadCount} 个文件`, 'success');
+                    showStatus(`已開始下載 ${downloadCount} 個檔案`, 'success');
                 } catch (error) {
-                    console.error('批量下载时出错:', error);
-                    showStatus('批量下载时出错: ' + error.message, 'error');
+                    console.error('批次下載時出錯:', error);
+                    showStatus('批次下載時出錯: ' + error.message, 'error');
                     
                     batchDownloadDirectButton.disabled = false;
-                    batchDownloadDirectButton.innerHTML = '<span class="icon">📁</span> 直接批量下载';
+                    batchDownloadDirectButton.innerHTML = '<span class="icon">📁</span> 直接批次下載';
                 }
             }
         });
